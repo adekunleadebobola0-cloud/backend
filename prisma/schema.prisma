@@ -1,0 +1,183 @@
+// Prisma schema for HandyHub
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  HANDYMAN
+  ADMIN
+}
+
+enum Category {
+  CARPENTRY
+  ELECTRICAL_WORKS
+  PLUMBING
+  HOUSE_SECTION
+  FURNITURE_WORKS
+  PAINTING
+  LANDSCAPING
+  ASSEMBLING
+  GENERAL_MAINTENANCE
+}
+
+enum BookingStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CARD
+  PAYPAL
+  PAYSTACK
+  BANK_TRANSFER
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(CUSTOMER)
+  fullName     String
+  phone        String?
+  address      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  customerBookings Booking[]        @relation("CustomerBookings")
+  handymanProfile  HandymanProfile?
+
+  messagesSent     Message[]      @relation("UserMessagesSent")
+  messagesReceived Message[]      @relation("UserMessagesReceived")
+  notifications    Notification[]
+  reviewsGiven     Review[]       @relation("CustomerReviews")
+}
+
+model HandymanProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id])
+  category        Category
+  description     String
+  experienceYears Int
+  hourlyRate      Float
+  workingHours    Json? // e.g. {"monday":"07:00-18:00", ...}
+  gallery         String[] // image URLs
+  isVerified      Boolean  @default(false)
+  averageRating   Float    @default(0)
+  totalReviews    Int      @default(0)
+  totalCustomers  Int      @default(0)
+  location        String // e.g. "Lagos, Nigeria"
+
+  services Service[] @relation("HandymanServices")
+  reviews  Review[]  @relation("HandymanReviews")
+  bookings Booking[] @relation("HandymanRequests")
+}
+
+model Service {
+  id          String          @id @default(cuid())
+  handymanId  String
+  handyman    HandymanProfile @relation("HandymanServices", fields: [handymanId], references: [id])
+  name        String // e.g. "Wiring & lighting repairs"
+  description String?
+  bookings    Booking[]       @relation("ServiceBookings")
+}
+
+model Booking {
+  id          String          @id @default(cuid())
+  customerId  String
+  customer    User            @relation("CustomerBookings", fields: [customerId], references: [id])
+  handymanId  String
+  handyman    HandymanProfile @relation("HandymanRequests", fields: [handymanId], references: [id])
+  serviceId   String?
+  service     Service?        @relation("ServiceBookings", fields: [serviceId], references: [id])
+  status      BookingStatus   @default(PENDING)
+  address     String
+  description String?
+  dateTime    DateTime
+  subtotal    Float
+  tax         Float
+  totalAmount Float
+  couponCode  String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  payment  Payment?
+  review   Review?
+  messages Message[] @relation("BookingMessages")
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  bookingId     String        @unique
+  booking       Booking       @relation(fields: [bookingId], references: [id])
+  method        PaymentMethod
+  status        PaymentStatus
+  transactionId String
+  amount        Float
+  createdAt     DateTime      @default(now())
+}
+
+model Review {
+  id         String          @id @default(cuid())
+  bookingId  String          @unique
+  booking    Booking         @relation(fields: [bookingId], references: [id])
+  customerId String
+  customer   User            @relation("CustomerReviews", fields: [customerId], references: [id])
+  handymanId String
+  handyman   HandymanProfile @relation("HandymanReviews", fields: [handymanId], references: [id])
+  rating     Int // 1-5
+  comment    String?
+  createdAt  DateTime        @default(now())
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  sender     User     @relation("UserMessagesSent", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User     @relation("UserMessagesReceived", fields: [receiverId], references: [id])
+  bookingId  String?
+  booking    Booking? @relation("BookingMessages", fields: [bookingId], references: [id])
+  content    String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String // BOOKING, PAYMENT, REVIEW, SYSTEM, OFFER
+  title     String
+  body      String
+  data      Json?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Coupon {
+  id           String   @id @default(cuid())
+  code         String   @unique
+  discountType String // PERCENTAGE, FIXED
+  value        Float
+  expiresAt    DateTime
+  usageLimit   Int?
+  usedCount    Int      @default(0)
+}
