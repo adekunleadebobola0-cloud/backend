@@ -27,7 +27,7 @@ router.get('/', authenticate, async (req, res) => {
 
 // Get chat with specific user
 router.get('/:userId', authenticate, async (req, res) => {
-  const { userId } = req.params;
+  const userId = req.params.userId as string;
   try {
     const messages = await prisma.message.findMany({
       where: {

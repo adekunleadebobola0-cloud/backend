@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import prisma from '../prisma';
+import { prisma } from "../prisma"
 
 const router = Router();
 
@@ -46,7 +46,7 @@ router.get('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const handyman = await prisma.handymanProfile.findUnique({
       where: { id },

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { BookingStatus } from '@prisma/client';
 import { prisma } from '../prisma';
 import { authenticate } from '../middleware/auth';
 
@@ -59,8 +60,8 @@ router.get('/', authenticate, async (req, res) => {
   const role = req.query.role || 'customer';
   try {
     const bookings = await prisma.booking.findMany({
-      where: role === 'handyman' 
-        ? { handyman: { userId: req.user!.id } } 
+      where: role === 'handyman'
+        ? { handyman: { userId: req.user!.id } }
         : { customerId: req.user!.id },
       include: {
         customer: true,
@@ -78,7 +79,7 @@ router.get('/', authenticate, async (req, res) => {
 router.get('/:id', authenticate, async (req, res) => {
   try {
     const booking = await prisma.booking.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       include: { customer: true, handyman: { include: { user: true } } }
     });
     if (!booking) return res.status(404).json({ error: 'Booking not found' });
@@ -93,8 +94,8 @@ router.put('/:id/status', authenticate, async (req, res) => {
   const { status } = req.body;
   try {
     const booking = await prisma.booking.update({
-      where: { id: req.params.id },
-      data: { status }
+      where: { id: req.params.id as string },
+      data: { status: status as BookingStatus }
     });
 
     // Notify customer

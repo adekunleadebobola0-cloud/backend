@@ -3,9 +3,9 @@ import jwt from 'jsonwebtoken';
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretjwtkey';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'supersecretrefreshkey';
 
-export const generateTokens = (userId: string, role: string) => {
-  const token = jwt.sign({ userId, role }, JWT_SECRET, { expiresIn: '15m' });
-  const refreshToken = jwt.sign({ userId, role }, JWT_REFRESH_SECRET, { expiresIn: '7d' });
+export const generateTokens = (id: string, role: string) => {
+  const token = jwt.sign({ id, role }, JWT_SECRET, { expiresIn: '15m' });
+  const refreshToken = jwt.sign({ id, role }, JWT_REFRESH_SECRET, { expiresIn: '7d' });
   
   return { token, refreshToken };
 };

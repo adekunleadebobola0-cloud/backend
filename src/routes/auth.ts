@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
-import prisma from '../prisma';
+import { prisma } from '../prisma';
 import { generateTokens, verifyRefreshToken } from '../utils/jwt';
 
 const router = Router();
